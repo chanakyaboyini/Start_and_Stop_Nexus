@@ -7,7 +7,7 @@ pipeline {
   }
 
   environment {
-    AWS_CREDENTIALS_ID = 'aws-nexus-ec2-creds'
+    AWS_CREDENTIALS_ID = 'jenkins-aws-start-stop'
   }
 
   stages {
