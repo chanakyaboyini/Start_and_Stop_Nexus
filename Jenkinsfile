@@ -4,6 +4,7 @@ pipeline {
   parameters {
     string(name: 'INSTANCE_ID', defaultValue: 'i-07e528bbf536acdcd', description: 'EC2 instance ID')
     string(name: 'AWS_REGION', defaultValue: 'us-east-1', description: 'AWS region')
+    string(name: 'start', defaultValue: 'false', description: 'Start EC2 instance? Set to true to start, false to stop.')
   }
 
   environment {
