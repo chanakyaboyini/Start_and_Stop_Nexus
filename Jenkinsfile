@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   parameters {
-    string(name: 'INSTANCE_ID', defaultValue: 'i-0123456789abcdef0', description: 'EC2 instance ID')
+    string(name: 'INSTANCE_ID', defaultValue: 'i-07e528bbf536acdcd', description: 'EC2 instance ID')
     string(name: 'AWS_REGION', defaultValue: 'us-east-1', description: 'AWS region')
   }
 
