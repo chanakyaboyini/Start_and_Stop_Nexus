@@ -4,7 +4,7 @@ pipeline {
   parameters {
     string(name: 'INSTANCE_ID', defaultValue: 'i-07e528bbf536acdcd', description: 'EC2 instance ID')
     string(name: 'AWS_REGION', defaultValue: 'us-east-1', description: 'AWS region')
-    string(name: 'start', defaultValue: 'false', description: 'Start EC2 instance? Set to true to start, false to stop.')
+    choice(name: 'ACTION', choices: ['start', 'stop'], description: 'Choose whether to start or stop the EC2 instance')
   }
 
   environment {
@@ -12,25 +12,46 @@ pipeline {
   }
 
   stages {
-    stage('Stop EC2 Instance') {
+    stage('Manage EC2 Instance') {
       steps {
         withCredentials([[
           $class: 'AmazonWebServicesCredentialsBinding',
           credentialsId: env.AWS_CREDENTIALS_ID
         ]]) {
           sh '''#!/bin/bash
-            echo "Stopping EC2 instance $INSTANCE_ID in $AWS_REGION"
+            echo "Selected action: $ACTION"
+            echo "Target EC2 instance: $INSTANCE_ID in region: $AWS_REGION"
 
-            aws ec2 stop-instances \
-              --instance-ids "$INSTANCE_ID" \
-              --region "$AWS_REGION"
+            if [[ "$ACTION" == "start" ]]; then
+              echo "Starting EC2 instance..."
+              aws ec2 start-instances \
+                --instance-ids "$INSTANCE_ID" \
+                --region "$AWS_REGION"
 
-            echo "Waiting for instance to stop..."
-            aws ec2 wait instance-stopped \
-              --instance-ids "$INSTANCE_ID" \
-              --region "$AWS_REGION"
+              echo "Waiting for EC2 to enter running state..."
+              aws ec2 wait instance-running \
+                --instance-ids "$INSTANCE_ID" \
+                --region "$AWS_REGION"
 
-            echo "✅ EC2 instance $INSTANCE_ID stopped successfully."
+              echo "✅ EC2 instance $INSTANCE_ID is now running."
+
+            elif [[ "$ACTION" == "stop" ]]; then
+              echo "Stopping EC2 instance..."
+              aws ec2 stop-instances \
+                --instance-ids "$INSTANCE_ID" \
+                --region "$AWS_REGION"
+
+              echo "Waiting for EC2 to enter stopped state..."
+              aws ec2 wait instance-stopped \
+                --instance-ids "$INSTANCE_ID" \
+                --region "$AWS_REGION"
+
+              echo "✅ EC2 instance $INSTANCE_ID has been stopped."
+
+            else
+              echo "❌ Invalid ACTION: $ACTION. Use 'start' or 'stop'."
+              exit 1
+            fi
           '''
         }
       }
@@ -39,10 +60,10 @@ pipeline {
 
   post {
     success {
-      echo "✅ Pipeline completed: EC2 stopped."
+      echo "✅ Pipeline completed: EC2 $ACTION executed successfully."
     }
     failure {
-      echo "❌ Pipeline failed: check credentials, CLI install, or parameters."
+      echo "❌ Pipeline failed during EC2 $ACTION. Check CLI, credentials, or parameters."
     }
   }
 }
